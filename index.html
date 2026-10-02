@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Portal Revenue Cockpit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: operating console for a property-portal revenue team. Sticky market filter and tab strip; dense tables; every dotted-underlined number opens the accounts behind it. */
+:root{--bg:#edf1f0;--surface:#ffffff;--sunk:#dfe7e5;--ink:#11201e;--mute:#52635f;--line:#cbd6d3;--accent:#0c6a60;--accent-soft:#d3ebe6;--on-accent:#ffffff;--s1:#0b8a7a;--s2:#b3541e;
+--good:#1c6f3f;--good-bg:#dcf0e2;--warn:#8a5600;--warn-bg:#f7e9c6;--crit:#a8301f;--crit-bg:#f8dfd9;
+--sans:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"Spline Sans Mono",ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--surface:#152120;--sunk:#1d2c2a;--ink:#e2ecea;--mute:#93a6a2;--line:#2a3d3a;--accent:#5fd0c0;--accent-soft:#16403a;--on-accent:#06211d;--s1:#149e8c;--s2:#c9753d;
+--good:#63cf93;--good-bg:#143524;--warn:#e5b455;--warn-bg:#3a2c0d;--crit:#f28b7b;--crit-bg:#43201a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1514;--surface:#152120;--sunk:#1d2c2a;--ink:#e2ecea;--mute:#93a6a2;--line:#2a3d3a;--accent:#5fd0c0;--accent-soft:#16403a;--on-accent:#06211d;--s1:#149e8c;--s2:#c9753d;
+--good:#63cf93;--good-bg:#143524;--warn:#e5b455;--warn-bg:#3a2c0d;--crit:#f28b7b;--crit-bg:#43201a;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;padding-inline:16px;padding-block:0 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.top{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:flex-end;justify-content:space-between;padding-top:18px}
+h1{font-size:23px;margin:0;font-weight:700;letter-spacing:-.3px;text-wrap:balance}
+.by{color:var(--mute);font-size:12.5px}
+.demo{background:var(--warn-bg);color:var(--warn);border-radius:4px;padding:6px 10px;font-size:12.5px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
+.filters{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.filters label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--mute);display:flex;flex-direction:column;gap:2px}
+select,button,input{font:inherit;color:var(--ink)}
+select{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:5px 8px;font-size:13px;max-width:100%}
+.wk{font-size:12.5px;color:var(--mute)}
+.chk{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--good);background:var(--good-bg);padding:4px 8px;border-radius:4px}
+.tabs{display:flex;gap:2px;overflow-x:auto}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:7px 11px;cursor:pointer;color:var(--mute);font-weight:500;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+button:focus-visible,select:focus-visible,input:focus-visible,[data-d]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{display:flex;flex-direction:column;gap:16px}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:1.1px;color:var(--mute);margin:0 0 8px;font-weight:600}
+.lede{color:var(--mute);margin:0;max-width:78ch}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:2px}
+button.tile{cursor:pointer}button.tile:hover{border-color:var(--accent)}
+.tile .l{font-size:11.5px;color:var(--mute)}
+.tile .v{font-family:var(--mono);font-size:24px;font-weight:500;letter-spacing:-.5px}
+.tile .s{font-size:12px;color:var(--mute)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;min-width:0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--mute);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+th.n{text-align:right}
+[data-d]{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.tile[data-d]{text-decoration:none}
+.pill{display:inline-block;font-family:var(--mono);font-size:12px;padding:1px 7px;border-radius:10px;white-space:nowrap}
+.good{background:var(--good-bg);color:var(--good)}.warn{background:var(--warn-bg);color:var(--warn)}.crit{background:var(--crit-bg);color:var(--crit)}.neu{background:var(--sunk);color:var(--mute)}
+.up{color:var(--good)}.dn{color:var(--crit)}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.flow div{background:var(--sunk);border-radius:5px;padding:8px 12px;flex:1 1 130px}
+.flow b{display:block;font-family:var(--mono);font-size:20px;font-weight:500}
+.flow span{font-size:12px;color:var(--mute)}
+.note{font-size:12.5px;color:var(--mute);margin:8px 0 0;max-width:82ch}
+.act{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.act li{border-left:3px solid var(--accent);padding-left:10px}
+.act small{color:var(--mute);display:block}
+.btn{background:var(--accent);color:var(--on-accent);border:0;border-radius:4px;padding:6px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.btn.sec{background:var(--sunk);color:var(--ink)}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 20px;margin-bottom:12px}
+.ctl label{font-size:12.5px;color:var(--mute);display:flex;flex-direction:column;gap:3px}
+.ctl output{font-family:var(--mono);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.hb{display:inline-block;height:10px;background:var(--accent);border-radius:2px;vertical-align:middle}
+.hb.b{background:var(--mute)}
+dialog{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:0;width:min(1040px,calc(100vw - 24px));max-height:86vh}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface)}
+.dh h3{margin:0;font-size:15px}
+.db{padding:8px 14px 14px;overflow:auto}
+.db td,.db th{font-size:12px;white-space:nowrap}
+textarea{width:100%;height:120px;font-family:var(--mono);font-size:11px;background:var(--sunk);color:var(--ink);border:1px solid var(--line)}
+svg text{font-family:var(--mono);font-size:11px;fill:var(--mute)}svg text.dlab{fill:var(--ink)}
+.lg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--mute);margin-top:4px}.lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+.hbars{display:grid;grid-template-columns:max-content minmax(60px,1fr) max-content;gap:7px 10px;align-items:center;font-size:12.5px}
+.ht{background:var(--sunk);border-radius:3px;height:14px}.hf{display:block;height:100%;background:var(--accent);border-radius:0 3px 3px 0}.hf.c{background:var(--crit)}.hf.w{background:var(--warn)}
+</style>
+
+</head><body>
+<div class="wrap">
+<div class="top">
+  <div><h1>Portal Revenue Cockpit</h1><div class="by">Prototype by Swarup Kumar Mohanty · how a Head of Revenue Operations would run a five-market property portal: early warning, order-to-cash, deal desk, targets and commissions on one account spine</div></div>
+  <div class="demo">Invented data for a fictional portal. No company, broker or developer data.</div>
+</div>
+<div class="bar">
+  <div class="filters">
+    <label for="fm">Market<select id="fm"></select></label>
+    <span class="wk">As of 30 Sep 2026 · AED · annual contract value</span>
+    <span class="chk" id="chk"></span>
+  </div>
+  <div class="tabs" role="tablist" id="tabs"></div>
+</div>
+<main id="main"></main>
+</div>
+<dialog id="dlg"><div class="dh"><h3 id="dt"></h3><div><button class="btn" id="cp">Copy as CSV</button> <button id="cl" class="btn sec">Close</button></div></div><div class="db" id="dbody"></div></dialog>
+
+<script>
+/* ---------- 1. Synthetic portal book (seeded: same numbers on every load) ---------- */
+let seed=20261002;const R=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const rn=()=>{let u=0;for(let i=0;i<6;i++)u+=R();return(u-3)/.707};
+const pw=(arr,w)=>{let s=0;w.forEach(x=>s+=x);let r=R()*s;for(let i=0;i<arr.length;i++){r-=w[i];if(r<=0)return arr[i]}return arr[arr.length-1]};
+const pois=l=>{const L=Math.exp(-l);let k=0,p=1;do{k++;p*=R()}while(p>L);return k-1};
+const cl=(x,a,b)=>Math.max(a,Math.min(b,x)),avg=l=>l.length?l.reduce((s,x)=>s+x,0)/l.length:0,sum=(l,f)=>l.reduce((s,x)=>s+f(x),0);
+const MK=[{n:'UAE',w:55,x:1,sel:28},{n:'Saudi Arabia',w:18,x:.8,sel:10},{n:'Egypt',w:15,x:.3,sel:8},{n:'Qatar',w:7,x:.9,sel:4},{n:'Bahrain',w:5,x:.6,sel:3}];
+const SG=[{n:'Developer',w:8,a:600000,db:.08},{n:'Large brokerage',w:12,a:350000,db:.06},{n:'Mid brokerage',w:35,a:90000,db:.02},{n:'Independent agent',w:45,a:25000,db:0}];
+const MI=MK.map((_,i)=>i),SI=SG.map((_,i)=>i),CAP=.15; /* discount above 15% needs deal-desk approval */
+const SEL=[];MK.forEach((m,mi)=>{for(let i=0;i<m.sel;i++){const ten=Math.floor(R()*40);SEL.push({k:'s',id:m.n.slice(0,3).toUpperCase()+'-'+(i+1+'').padStart(2,'0'),m:mi,ten,ramp:Math.min(1,(ten+1)/6),att:cl(.92+.28*rn(),.3,1.9),acc:[]})}});
+const AC=[];
+for(let i=0;i<1400;i++){const m=pw(MI,MK.map(x=>x.w)),s=pw(SI,SG.map(x=>x.w)),h=rn();
+  const acv=Math.round(SG[s].a*Math.exp(rn()*.4)*MK[m].x/100)*100,model=R()<(s>=2?.6:.3)?'Credits':'Subscription',pay=pw(['Upfront','Post-dated cheques','Card monthly'],[35,40,25]);
+  const base=cl(.74+.14*h,.08,1),tr=R()<.24?-(.03+R()*.07):(R()-.5)*.02,util=[0,1,2,3,4,5].map(k=>cl(base+tr*k+(R()-.5)*.06,.02,1));
+  const leads=tr*3.5+(R()-.5)*.12,bounced=pay==='Post-dated cheques'&&R()<.05+(tr<-.03?.16:0)?1+(R()<.3):0;
+  let od=0,oa=0;if(bounced||(pay!=='Upfront'&&R()<.09)){od=Math.round(4+R()*115);oa=Math.round(acv/12*(1+Math.floor(R()*3))/100)*100}
+  const disc=cl(.07+.06*rn()+SG[s].db,0,.45),appr=disc<=CAP?true:R()<.58;
+  const d1=pay==='Upfront'?1+pois(2):pay==='Card monthly'?2+pois(4):3+pois(6),d2=pois(1.5)+(R()<.1?5+pois(6):0),d3=pois(3);
+  const recent=R()<.2,stuck=recent&&R()<.34?pw(['Awaiting payment or cheques','Paid, awaiting activation','Active, awaiting invoice'],[5,3,2]):'';
+  const own=SEL.filter(x=>x.m===m)[Math.floor(R()*MK[m].sel)];
+  const a={k:'a',id:'AC-'+(10000+i),m,s,acv,model,pay,util,leads,bounced,od,oa,disc,appr,list:Math.round(acv/(1-disc)),d1,d2,d3,recent,stuck,wait:stuck?3+Math.floor(R()*24):0,ren:Math.floor(R()*12),own};
+  const l2=(util[4]+util[5])/2,p3=(util[0]+util[1]+util[2])/3;a.u=l2;a.drop=p3-l2;
+  const c=[['Usage falling',cl(a.drop/.25,0,1)*35],['Low usage',cl((.6-l2)/.4,0,1)*25],['Bounced cheque',bounced?15:0],['Overdue balance',od>30?10:od>0?4:0],['Leads falling',cl(-leads/.3,0,1)*15]];
+  a.score=Math.round(sum(c,x=>x[1]));a.sig=a.score<30?'None':c.slice().sort((x,y)=>y[1]-x[1])[0][0];a.tier=a.score>=55?'High':a.score>=30?'Medium':'Low';a.p={High:.45,Medium:.75,Low:.92}[a.tier];
+  own.acc.push(a);AC.push(a)}
+const PLAY={'Usage falling':'Account manager call in 5 days; run the listing optimiser with the client; offer a move to a smaller, better-used package before renewal','Low usage':'Onboarding refresh; fix listing quality scores; convert unused credits into featured placement trial','Bounced cheque':'Seller and Finance call within 48 h; replace cheque; suspend per contract terms at day 30','Overdue balance':'Collections sequence day 1, 7, 15; seller commission held until cleared','Leads falling':'Lead-quality review; reprice or relocate listings; show lead-per-credit benchmark for the area','None':'No action'};
+SEL.forEach(s=>{s.book=sum(s.acc,a=>a.acv);s.quota=Math.round(2200000*MK[s.m].x*(.5+.5*s.ramp)/1000)*1000;s.bk=Math.round(s.quota*.75*s.att);s.od=sum(s.acc,a=>a.oa);s.coll=s.book?1-s.od/(s.book*.75):1;s.ret=s.book?sum(s.acc,a=>a.acv*a.p)/s.book/.85:1;s.var=Math.round(120000*MK[s.m].x)});
+
+/* Sales funnel: 6,000 leads over 180 days, each walked through four stages */
+seed=77;const TR=['MQL → SAL','SAL → SQL','SQL → Proposal','Proposal → Won'],STG=['MQL','SAL','SQL','Proposal'],FP=[[.55,.5,.6,.35],[.6,.5,.55,.38],[.65,.5,.5,.4],[.7,.45,.5,.45]],FD=[[3,10,18,25],[2,8,14,18],[2,5,9,10],[1,3,5,6]],SRC=['Inbound web','Outbound','Referral','Event'];
+const OP=[];for(let i=0;i<6000;i++){const m=pw(MI,MK.map(x=>x.w)),s=pw(SI,[5,10,35,50]),c=R()*180,src=pw([0,1,2,3],[45,25,20,10]);let cum=0,st=0,res='';const dd=[];
+ for(;st<4;st++){const t=FD[s][st]*Math.exp(rn()*.5)*(st===2&&s<3&&R()<.2?3.2:1);if(cum+t>c){res='Open';dd.push(c-cum);break}cum+=t;dd.push(t);if(R()>=FP[s][st]*(src===2?1.12:src===1?.9:1)){res='Lost';break}}
+ if(st===4){res='Won';st=3}
+ OP.push({k:'o',id:'OP-'+(20000+i),m,s,src,st,res,dd,cyc:cum,age:res==='Open'?dd[st]:0,val:Math.round(SG[s].a*Math.exp(rn()*.4)*MK[m].x/100)*100,stall:res==='Open'&&dd[st]>2*FD[s][st],own:SEL.filter(x=>x.m===m)[Math.floor(R()*MK[m].sel)]})}
+const passed=(o,j)=>o.st>j||o.res==='Won';
+function fstat(g){const c=[0,1,2,3].map(j=>{const p=g.filter(o=>passed(o,j)).length,x=g.filter(o=>o.res==='Lost'&&o.st===j).length;return p+x?p/(p+x):0}),won=g.filter(o=>o.res==='Won');
+ return{c,won,win:c.reduce((a,b)=>a*b,1),size:avg(won.map(o=>o.val)),cyc:avg(won.map(o=>o.cyc)),base:g.length*2*c.reduce((a,b)=>a*b,1)*avg(won.map(o=>o.val))}}
+
+/* ---------- 2. Helpers ---------- */
+const F={m:-1},inM=x=>F.m<0||x.m===F.m,ms=()=>F.m<0?MI:[F.m];
+const pct=(a,b)=>b?100*a/b:null,f1=x=>x==null||!isFinite(x)?'–':x.toFixed(1),f0=x=>x==null||!isFinite(x)?'–':Math.round(x).toLocaleString('en-US');
+const fm=x=>{const a=Math.abs(x);return a>=1e6?(x/1e6).toFixed(a>=1e8?0:1)+'M':a>=1e3?Math.round(x/1e3)+'K':f0(x)};
+let D=[];const d=(list,title)=>{D.push([title,list]);return' data-d="'+(D.length-1)+'" tabindex="0" role="button"'};
+const tbl=(h,rows)=>'<div class="scroll"><table><tr>'+h.map(x=>'<th'+(x[0]==='#'?' class="n">'+x.slice(1):'>'+x)+'</th>').join('')+'</tr>'+rows.map(r=>'<tr>'+r.join('')+'</tr>').join('')+'</table></div>';
+const td=x=>'<td>'+x+'</td>',tn=x=>'<td class="n">'+x+'</td>',tdd=(list,title,txt)=>'<td class="n"'+d(list,title)+'>'+txt+'</td>';
+const pill=(v,t,lo)=>v==null?'–':'<span class="pill '+(v>=t?'good':v>=t-(lo||8)?'warn':'crit')+'">'+f1(v)+'%</span>';
+const tp=t=>'<span class="pill '+({High:'crit',Medium:'warn',Low:'good'})[t]+'">'+t+'</span>';
+const tile=(l,v,s,list,t)=>list?'<button class="tile"'+d(list,t)+'><span class="l">'+l+'</span><span class="v">'+v+'</span><span class="s">'+s+'</span></button>':'<div class="tile"><span class="l">'+l+'</span><span class="v">'+v+'</span><span class="s">'+s+'</span></div>';
+const wu=l=>pct(sum(l,a=>a.acv*a.u),sum(l,a=>a.acv)),acv=l=>sum(l,a=>a.acv);
+const med=l=>{if(!l.length)return 0;const s=l.slice().sort((a,b)=>a-b);return s[Math.floor(s.length/2)]};
+const MN=['Oct 2026','Nov 2026','Dec 2026'];
+const $=id=>document.getElementById(id);
+
+const sv=(h,lab,inner)=>'<svg viewBox="0 0 600 '+h+'" width="100%" role="img" aria-label="'+lab+'">'+inner+'</svg>';
+const grid=(mn,mx,Y,f)=>[0,1,2,3,4].map(i=>{const v=mn+(mx-mn)*i/4;return'<line x1="52" x2="580" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--line)"/><text x="46" y="'+(Y(v)+4)+'" text-anchor="end">'+f(v)+'</text>'}).join('');
+const lg=items=>'<div class="lg">'+items.map(x=>'<span><i style="background:var(--'+x[1]+')"></i>'+x[0]+'</span>').join('')+'</div>';
+const ins=l=>'<div class="panel"><h2>What the data says</h2><ul class="act">'+l.map(x=>'<li>'+x+'</li>').join('')+'</ul></div>';
+function lines(ser,xl,mn,mx,f,lab){const X=i=>52+i*(440/(xl.length-1)),Y=v=>190-(v-mn)/(mx-mn)*170;
+ return sv(220,lab,grid(mn,mx,Y,f)+xl.map((t,i)=>'<text x="'+X(i)+'" y="210" text-anchor="middle">'+t+'</text>').join('')+ser.map(s=>'<polyline fill="none" stroke="var(--'+s.c+')" stroke-width="2" points="'+s.y.map((v,i)=>X(i)+','+Y(v)).join(' ')+'"/>'+s.y.map((v,i)=>'<circle cx="'+X(i)+'" cy="'+Y(v)+'" r="'+(i===s.y.length-1?4.5:3)+'" fill="var(--'+s.c+')" stroke="var(--surface)" stroke-width="2"><title>'+s.n+', '+xl[i]+': '+f(v)+'</title></circle>').join('')+'<text x="'+(X(xl.length-1)+10)+'" y="'+(Y(s.y[s.y.length-1])+4)+'" class="dlab">'+s.n+' '+f(s.y[s.y.length-1])+'</text>').join(''))}
+function gbar(cats,A,B,nm,f,lab){const mx=Math.max(...A,...B,1e-9)*1.14,Y=v=>190-v/mx*170,bw=528/cats.length,w=Math.min(46,bw*.3);
+ return sv(220,lab,grid(0,mx,Y,f)+cats.map((c,i)=>{const cx=52+bw*(i+.5);return[[A[i],'s1',nm[0],-w-1],[B[i],'s2',nm[1],1]].map(b=>'<rect x="'+(cx+b[3])+'" y="'+Y(b[0])+'" width="'+w+'" height="'+Math.max(0,190-Y(b[0]))+'" rx="3" fill="var(--'+b[1]+')"><title>'+c+', '+b[2]+': '+f(b[0])+'</title></rect>'+(cats.length<=3?'<text class="dlab" x="'+(cx+b[3]+w/2)+'" y="'+(Y(b[0])-4)+'" text-anchor="middle">'+f(b[0])+'</text>':'')).join('')+'<text x="'+cx+'" y="210" text-anchor="middle">'+c+'</text>'}).join(''))+lg([[nm[0],'s1'],[nm[1],'s2']])}
+function scat(pts,o){const X=v=>52+(v-o.x0)/(o.x1-o.x0)*528,Y=v=>190-(v-o.y0)/(o.y1-o.y0)*170;
+ return sv(236,o.lab,grid(o.y0,o.y1,Y,o.yf)+[0,1,2,3,4].map(i=>{const v=o.x0+(o.x1-o.x0)*i/4;return'<text x="'+X(v)+'" y="208" text-anchor="'+(i===4?'end':i?'middle':'start')+'">'+o.xf(v)+'</text>'}).join('')+'<text x="316" y="230" text-anchor="middle">'+o.xl+'</text>'+(o.ref||[]).map(r=>r[0]==='x'?'<line x1="'+X(r[1])+'" x2="'+X(r[1])+'" y1="20" y2="190" stroke="var(--mute)" stroke-dasharray="4 4"/>':'<line x1="52" x2="580" y1="'+Y(r[1])+'" y2="'+Y(r[1])+'" stroke="var(--mute)" stroke-dasharray="4 4"/>').join('')+pts.map(p=>'<circle cx="'+X(cl(p.x,o.x0,o.x1))+'" cy="'+Y(cl(p.y,o.y0,o.y1))+'" r="'+p.r+'" fill="var(--'+p.c+')" fill-opacity=".55" stroke="var(--surface)" stroke-width="1"><title>'+p.t+'</title></circle>').join(''))}
+function hbar(rows,f,cls){const mx=Math.max(...rows.map(r=>r[1]),1e-9);return'<div class="hbars">'+rows.map(r=>'<div>'+r[0]+'</div><div class="ht"><span class="hf '+(cls?cls(r):'')+'" style="width:'+Math.max(1,r[1]/mx*100)+'%" title="'+r[0]+': '+f(r[1])+'"></span></div><div class="n">'+f(r[1])+'</div>').join('')+'</div>'}
+const TC={High:'crit',Medium:'warn',Low:'good'},pf=v=>f0(v)+'%';
+
+/* ---------- 3. Scenario state (targets and commission sliders) ---------- */
+const S={g:25,mk:-10,wb:100,acc:2,gate:0,dc:1,ds:1,dt:1};
+function pay(s,o){const sc=o.wb/100*s.att+(1-o.wb/100)*s.ret;let m=sc<.5?0:sc<=1?sc:1+(sc-1)*o.acc;if(o.gate&&s.coll<.92)m*=.75;return{sc,pay:s.var*m}}
+function plan(l,o){const r=l.map(s=>({s,...pay(s,o)})),tot=sum(r,x=>x.pay),weak=r.filter(x=>x.s.coll<.92||x.s.ret<.95);
+  return{r,tot,over:r.filter(x=>x.sc>=1).length,weakPay:sum(weak.filter(x=>x.sc>=1),x=>x.pay),weak:weak.filter(x=>x.sc>=1).map(x=>x.s)}}
+function cap(m){const l=SEL.filter(s=>s.m===m),fte=sum(l,s=>s.ramp),bk=sum(l,s=>s.bk),prod=bk/(fte*9),ann=bk/9*12,bu=l.length*.85*prod*12*(1+S.mk/100),tdn=ann*(1+S.g/100),gap=tdn-bu;
+  return{l,fte,bk,prod,ann,bu,tdn,gap,hires:gap>0?Math.ceil(gap/(prod*12*.6*(1+S.mk/100))):0}}
+
+/* ---------- 4. Views ---------- */
+const V={
+overview(){const l=AC.filter(inM),hi=l.filter(a=>a.tier==='High'),od=l.filter(a=>a.oa>0),un=l.filter(a=>!a.appr),r90=l.filter(a=>a.ren<3),exp=sum(r90,a=>a.acv*a.p);
+  const leak=sum(un,a=>a.list*(a.disc-CAP)),lag=sum(l,a=>a.acv/365*(a.d1+a.d2));
+  const worst=ms().map(m=>({m,u:wu(AC.filter(a=>a.m===m))})).sort((a,b)=>a.u-b.u)[0],hr=hi.filter(a=>a.ren<3);
+  const sig=[...new Set(hi.map(a=>a.sig))].map(s=>[s,hi.filter(a=>a.sig===s)]).sort((a,b)=>acv(b[1])-acv(a[1]))[0];
+  const cur=plan(SEL.filter(inM),{wb:100,acc:2,gate:0});
+  const com=[['<b>AED '+fm(acv(hr))+'</b> of contract value renews in the next 90 days on accounts scored high risk ('+hr.length+' accounts).','Work the Early warning list top-down; each row carries its trigger and play · Owner: account management lead · This week'],
+   sig?['The most common trigger on high-risk accounts is <b>'+sig[0].toLowerCase()+'</b> ('+sig[1].length+' accounts, AED '+fm(acv(sig[1]))+').',PLAY[sig[0]].split(';')[0]+' · Owner: country sales managers']:null,
+   ['<b>'+MK[worst.m].n+'</b> has the lowest usage of what clients bought: '+f1(worst.u)+'%.','Review package fit and onboarding there before the next renewal wave · Owner: country manager'],
+   ['<b>AED '+fm(sum(od,a=>a.oa))+'</b> is overdue across '+od.length+' accounts; '+od.filter(a=>a.od>60).length+' are past 60 days.','Finance and the account owner agree a dated plan per account; suspension applied per contract · Owner: collections lead with sellers'],
+   ['<b>'+un.length+' contracts</b> carry a discount above '+CAP*100+'% with no approval on file, worth AED '+fm(leak)+' against list.','Route through the deal desk; approval recorded before the order is booked · Owner: deal desk'],
+   ['The bookings-only commission plan pays <b>AED '+fm(cur.weakPay)+'</b> at or above target to sellers whose own book is weak on collections or retention.','See the Commissions tab for a plan that carries retention and a collections gate · Owner: Head of RevOps with CRO, Finance, People']].filter(Boolean);
+  return'<div class="tiles">'+tile('Contract value in force','AED '+fm(acv(l)),f0(l.length)+' accounts')+
+   tile('Usage of what clients bought',f1(wu(l))+'%','credits or listing slots used, last 2 months')+
+   tile('High-risk contract value','AED '+fm(acv(hi)),hi.length+' accounts · '+f1(pct(acv(hi),acv(l)))+'% of book',hi,'High-risk accounts')+
+   tile('Renewals due in 90 days','AED '+fm(acv(r90)),'expected to renew: AED '+fm(exp)+' ('+f1(pct(exp,acv(r90)))+'%)',r90,'Renewals due in 90 days')+
+   tile('Overdue balance','AED '+fm(sum(od,a=>a.oa)),od.length+' accounts',od,'Accounts with an overdue balance')+
+   tile('Revenue delayed by sign-to-live lag','AED '+fm(lag),'median '+med(l.map(a=>a.d1+a.d2))+' days from signature to live')+'</div>'+
+  '<div class="cols"><div class="panel"><h2>Usage of what clients bought, by risk tier, six months</h2>'+lines(['High','Medium','Low'].map(t=>{const g=l.filter(a=>a.tier===t);return{n:t,c:TC[t],y:[0,1,2,3,4,5].map(k=>pct(sum(g,a=>a.acv*a.util[k]),acv(g))||0)}}),['Apr','May','Jun','Jul','Aug','Sep'],0,100,pf,'Usage by risk tier, six months')+'<p class="note">High-risk accounts looked like everyone else in April. The fall in usage is visible four to five months before the renewal conversation, which is the window the commercial team has to act in.</p></div>'+
+  '<div class="panel"><h2>Renewals due against expected, next three months</h2>'+gbar(['Oct','Nov','Dec'],[0,1,2].map(k=>acv(l.filter(a=>a.ren===k))),[0,1,2].map(k=>sum(l.filter(a=>a.ren===k),a=>a.acv*a.p)),['Due','Expected to renew'],fm,'Renewals due and expected')+'<p class="note">The space between each pair of bars is contract value at risk. The table below names the accounts behind it.</p></div></div>'+
+  '<div class="cols"><div class="panel"><h2>What changed and what happens next</h2><ul class="act">'+com.map(x=>'<li>'+x[0]+'<small>'+x[1]+'</small></li>').join('')+'</ul><p class="note">Drafted from the data by rule. The Head of RevOps edits and approves before it goes to the CRO.</p></div>'+
+  '<div class="panel"><h2>Renewal forecast, next three months</h2>'+tbl(['Month','#Due','#Accounts','#Expected to renew','#At risk','#High-risk accounts'],[0,1,2].map(k=>{const g=l.filter(a=>a.ren===k),h=g.filter(a=>a.tier==='High'),e=sum(g,a=>a.acv*a.p);
+    return[td(MN[k]),tn(fm(acv(g))),tn(g.length),tn(fm(e)),tn('<span class="dn">'+fm(acv(g)-e)+'</span>'),tdd(h,MN[k]+': high-risk renewals',h.length)]}))+
+   '<p class="note">Expected to renew weights each contract by its risk tier: 92% low, 75% medium, 45% high. These rates are assumptions here; in production they are fitted from two years of renewal outcomes and back-tested each quarter.</p></div></div>'+
+  '<div class="panel"><h2>Markets</h2>'+tbl(['Market','#Accounts','#Contract value','#Usage','#High-risk value','#Overdue','#Median days to live','#Unapproved discounts'],ms().map(m=>{const g=AC.filter(a=>a.m===m),h=g.filter(a=>a.tier==='High'),o=g.filter(a=>a.oa>0),u=g.filter(a=>!a.appr);
+    return[td(MK[m].n),tn(f0(g.length)),tn(fm(acv(g))),tn(pill(wu(g),70)),tdd(h,MK[m].n+': high-risk accounts',fm(acv(h))),tdd(o,MK[m].n+': overdue accounts',fm(sum(o,a=>a.oa))),tn(med(g.map(a=>a.d1+a.d2))),tdd(u,MK[m].n+': discounts above '+CAP*100+'% without approval',u.length)]}))+
+  '<p class="note">One method and one set of definitions across markets; the parameters differ by market. Every figure here comes from the same account list, so the country view and the group view cannot disagree.</p></div>'},
+
+funnel(){const l=OP.filter(inM),A=fstat(l),open=l.filter(o=>o.res==='Open'&&o.st>0),stl=l.filter(o=>o.stall),reach=[l.length].concat([0,1,2].map(j=>l.filter(o=>passed(o,j)).length),[A.won.length]);
+  const q=(a,k)=>{const x=a.slice().sort((p,r)=>p-r);return x[Math.floor(x.length*k)]||0},sd=j=>l.filter(o=>o.dd.length>j&&(passed(o,j)||o.res==='Lost'&&o.st===j)).map(o=>o.dd[j]);
+  const up=(F,dc,ds,dt)=>F.base?F.c.reduce((a,b)=>a*Math.min(1,b+dc/100),1)/F.win*(1+ds/100)/(1-dt/100)*F.base-F.base:0;
+  const seg=SI.map(i=>({i,F:fstat(l.filter(o=>o.s===i))})),B=sum(seg,x=>x.F.base),U=(dc,ds,dt)=>sum(seg,x=>up(x.F,dc,ds,dt));
+  const one=[0,1,2,3].map(j=>[TR[j],sum(seg,x=>x.F.base?x.F.base*(Math.min(1,x.F.c[j]+.01)/x.F.c[j]-1):0)]),best=one.slice().sort((a,b)=>b[1]-a[1])[0],worst=[0,1,2,3].map(j=>[j,A.c[j]]).sort((a,b)=>a[1]-b[1])[0];
+  const ss=[0,1,2,3].map(j=>{const g=l.filter(o=>o.res==='Open'&&o.st===j),t=g.filter(o=>o.stall);return{j,g,t}}),ws=ss.slice().sort((a,b)=>sum(b.t,o=>o.val)-sum(a.t,o=>o.val))[0],nS=SEL.filter(inM).length,tot=U(S.dc,S.ds,S.dt);
+  const srcR=[0,1,2,3].map(k=>[SRC[k],fstat(l.filter(o=>o.src===k)).win*100]).sort((a,b)=>b[1]-a[1]);
+  return'<p class="lede">New business is a chain of four conversions. Each stage has a rate, a time and an owner, so each can be improved separately. This tab finds where deals stall and prices small improvements: what one more point of conversion, one percent on deal size, or one percent off the cycle is worth, by segment.</p>'+
+  '<div class="tiles">'+tile('Leads, last 6 months',f0(l.length),f0(A.won.length)+' won so far')+tile('Lead-to-won rate',f1(A.win*100)+'%','product of the four stage rates')+tile('Average deal cycle',f0(A.cyc)+' days','lead created to won')+tile('Average deal size','AED '+fm(A.size),'won deals')+
+   tile('Open pipeline','AED '+fm(sum(open,o=>o.val)),open.length+' deals · average age in stage '+f0(avg(open.map(o=>o.age)))+' days',open,'Open deals past MQL')+tile('Stalled deals',f0(stl.length),'AED '+fm(sum(stl,o=>o.val))+' · over twice the usual time in stage',stl,'Stalled deals')+'</div>'+
+  '<div class="cols"><div class="panel"><h2>Funnel: leads reaching each stage</h2>'+hbar(['MQL','SAL','SQL','Proposal','Won'].map((n,i)=>[n+(i?' · '+f0(A.c[i-1]*100)+'%':''),reach[i]]),f0)+'<p class="note">MQL: marketing-qualified lead. SAL: accepted by sales. SQL: qualified by sales. The percentage is the conversion from the stage before, counted on leads that have left that stage (won through or lost), so open deals do not distort it.</p></div>'+
+  '<div class="panel"><h2>Days in each stage</h2>'+gbar(TR,[0,1,2,3].map(j=>q(sd(j),.5)),[0,1,2,3].map(j=>q(sd(j),.9)),['Median','Slowest tenth'],f0,'Days in each stage, median and slowest tenth')+'<p class="note">A wide gap between the two bars marks a stage with no exit rule: some deals pass quickly and others sit.</p></div></div>'+
+  '<div class="panel"><h2>Conversion, cycle and size by segment</h2>'+tbl(['Segment','#Leads'].concat(TR.map(t=>'#'+t),['#Lead to won','#Cycle, days','#Deal size','#Bookings a year']),seg.map(x=>[td(SG[x.i].n),tn(f0(l.filter(o=>o.s===x.i).length))].concat(x.F.c.map((v,j)=>'<td class="n" style="background:color-mix(in srgb,var(--crit) '+Math.round(cl((.6-v)*90,0,30))+'%,transparent)">'+f0(v*100)+'%</td>'),[tn(f1(x.F.win*100)+'%'),tn(f0(x.F.cyc)),tn(fm(x.F.size)),tn(fm(x.F.base))])))+'<p class="note">Shading marks the weakest conversions. Bookings a year = leads × 2 × the four rates × deal size.</p></div>'+
+  '<div class="cols"><div class="panel"><h2>Where deals stall</h2>'+tbl(['Stage','Owner','#Open','#Average age, days','#Stalled','#Stalled value'],ss.map(x=>[td(STG[x.j]),td(['Sales development','Seller','Seller','Seller and deal desk'][x.j]),tn(f0(x.g.length)),tn(f1(avg(x.g.map(o=>o.age)))),x.t.length?tdd(x.t,'Stalled at '+STG[x.j],x.t.length):tn('0'),tn(fm(sum(x.t,o=>o.val)))]))+'<p class="note">Stalled: open for more than twice the usual time for that stage and segment. Each list is a pipeline review agenda: advance, re-qualify or close out.</p></div>'+
+  '<div class="panel"><h2>Lead-to-won rate by source</h2>'+hbar(srcR,v=>f1(v)+'%')+'<p class="note">Marketing spend should follow won deals per lead, not lead volume.</p></div></div>'+
+  '<div class="panel"><h2>What small improvements are worth</h2><div class="ctl"><label for="wc">Conversion at every stage <output>+'+S.dc+' pt</output><input type="range" id="wc" data-k="dc" min="0" max="5" step="1" value="'+S.dc+'"></label><label for="wz">Average deal size <output>+'+S.ds+'%</output><input type="range" id="wz" data-k="ds" min="0" max="10" step="1" value="'+S.ds+'"></label><label for="wt">Deal cycle shorter by <output>'+S.dt+'%</output><input type="range" id="wt" data-k="dt" min="0" max="20" step="1" value="'+S.dt+'"></label></div>'+
+   tbl(['Segment','#Bookings a year','#Conversion only','#Deal size only','#Cycle only','#All three','#Uplift'],seg.map(x=>[td(SG[x.i].n),tn(fm(x.F.base)),tn('+'+fm(up(x.F,S.dc,0,0))),tn('+'+fm(up(x.F,0,S.ds,0))),tn('+'+fm(up(x.F,0,0,S.dt))),tn('<b class="up">+'+fm(up(x.F,S.dc,S.ds,S.dt))+'</b>'),tn(f1(pct(up(x.F,S.dc,S.ds,S.dt),x.F.base))+'%')]).concat([[td('<b>All segments</b>'),tn('<b>'+fm(B)+'</b>'),tn('+'+fm(U(S.dc,0,0))),tn('+'+fm(U(0,S.ds,0))),tn('+'+fm(U(0,0,S.dt))),tn('<b class="up">+'+fm(tot)+'</b>'),tn('<b>'+f1(pct(tot,B))+'%</b>')]]))+
+   '<p class="note">Conversion: each stage rate rises by the stated points. Deal size: bookings scale directly. Cycle: assumes sellers are the constraint, so a shorter cycle lets the same team close proportionally more deals in a year. The three compound.</p></div>'+
+  '<div class="cols"><div class="panel"><h2>Uplift from all three, by segment</h2>'+hbar(seg.map(x=>[SG[x.i].n,up(x.F,S.dc,S.ds,S.dt)]),v=>'AED '+fm(v))+'</div>'+
+  '<div class="panel"><h2>Value of one conversion point, by stage</h2>'+hbar(one,v=>'AED '+fm(v))+'<p class="note">The same point is worth more late in the funnel, where rates are lower and fewer deals remain.</p></div></div>'+
+  ins(['One point of conversion at every stage is worth <b>AED '+fm(U(1,0,0))+'</b> a year ('+f1(pct(U(1,0,0),B))+'%). One percent on deal size is worth AED '+fm(U(0,1,0))+' and one percent off the cycle AED '+fm(U(0,0,1))+'.<small>Four small conversion gains compound; that is why stage discipline beats a single price rise</small>',
+   'The single most valuable point is at <b>'+best[0]+'</b>: AED '+fm(best[1])+' a year.',
+   'The weakest stage is <b>'+TR[worst[0]]+'</b> at '+f0(worst[1]*100)+'%.<small>Likely causes to test: qualification criteria, proposal quality, pricing objections. Fix with a written exit rule for the stage and win/loss reasons recorded on every lost deal</small>',
+   'Most stalled value sits at <b>'+STG[ws.j]+'</b>: '+ws.t.length+' deals, AED '+fm(sum(ws.t,o=>o.val))+'.<small>A weekly review of this one list is the fastest way to shorten the cycle</small>',
+   'At your settings the same '+nS+' sellers produce <b>AED '+fm(tot)+'</b> more a year, about AED '+fm(tot/Math.max(1,nS))+' per seller, with no added headcount.',
+   '<b>'+srcR[0][0]+'</b> leads convert at '+f1(srcR[0][1])+'% against '+f1(srcR[3][1])+'% for '+srcR[3][0].toLowerCase()+'.'])},
+
+warning(){const l=AC.filter(inM),hi=l.filter(a=>a.tier!=='Low').sort((a,b)=>b.score*b.acv-a.score*a.acv);
+  const sigs=['Usage falling','Low usage','Bounced cheque','Overdue balance','Leads falling'];
+  return'<p class="lede">A portal client stops using what it bought months before it stops paying. Each account gets one score from five signals that sit in three different systems: platform usage, lead delivery, and the cheque and receivables ledger. The score is only useful with an owner and a play attached.</p>'+
+  '<div class="cols"><div class="panel"><h2>Risk tiers</h2>'+tbl(['Tier','#Accounts','#Contract value','#Share of book','#Usage','#Renewing in 90 days'],['High','Medium','Low'].map(t=>{const g=l.filter(a=>a.tier===t),r=g.filter(a=>a.ren<3);
+    return[td(tp(t)),tdd(g,t+'-risk accounts',f0(g.length)),tn(fm(acv(g))),tn(f1(pct(acv(g),acv(l)))+'%'),tn(f1(wu(g))+'%'),tdd(r,t+' risk, renewing in 90 days',fm(acv(r)))]}))+'</div>'+
+  '<div class="panel"><h2>Main trigger on high and medium accounts</h2>'+tbl(['Trigger','#Accounts','#Contract value','Play'],sigs.filter(s=>hi.some(a=>a.sig===s)).map(s=>{const g=hi.filter(a=>a.sig===s);return[td('<b>'+s+'</b>'),tdd(g,'Trigger: '+s,g.length),tn(fm(acv(g))),td('<small>'+PLAY[s]+'</small>')]}))+'</div></div>'+
+  (()=>{const H=l.filter(a=>a.tier==='High'),t20=H.slice().sort((a,b)=>b.acv-a.acv).slice(0,20),lo=l.filter(a=>a.u<.5),ok=l.filter(a=>a.u>=.7),cr=l.filter(a=>a.model==='Credits'),sb=l.filter(a=>a.model!=='Credits'),hs=g=>pct(g.filter(a=>a.tier==='High').length,g.length),pd=l.filter(a=>a.pay==='Post-dated cheques'),sg=SI.map(s=>[SG[s].n,pct(acv(H.filter(a=>a.s===s)),acv(l.filter(a=>a.s===s)))||0]).sort((a,b)=>b[1]-a[1]);
+   const pts=l.filter((a,i)=>a.tier!=='Low'||i%4===0).map(a=>({x:a.u*100,y:-a.drop*100,r:cl(Math.sqrt(a.acv)/90,2.5,11),c:TC[a.tier],t:a.id+' · '+SG[a.s].n+' · AED '+fm(a.acv)+' · usage '+f0(a.u*100)+'%, change '+f0(-a.drop*100)+' pts'}));
+   return'<div class="cols"><div class="panel"><h2>Every account: usage now against change in usage</h2>'+scat(pts,{x0:0,x1:100,y0:-60,y1:20,xf:pf,yf:v=>f0(v)+' pts',xl:'Usage now',lab:'Usage level against usage change by account',ref:[['y',0],['x',60]]})+lg([['High risk','crit'],['Medium','warn'],['Low (one in four shown)','good']])+'<p class="note">Vertical axis: change in usage over six months. Circle size is contract value. The bottom-left corner is the call list; a large circle drifting down on the right is the one to catch early.</p></div>'+
+   ins(['The 20 largest high-risk accounts hold <b>'+f1(pct(acv(t20),acv(H)))+'%</b> of high-risk contract value. Senior coverage on 20 names protects most of the exposure.<small>AED '+fm(acv(t20))+' of AED '+fm(acv(H))+'</small>',
+    'Accounts using under half of what they bought are expected to renew <b>'+f1(pct(sum(lo,a=>a.acv*a.p),acv(lo)))+'%</b> of their value, against <b>'+f1(pct(sum(ok,a=>a.acv*a.p),acv(ok)))+'%</b> for those above 70%.<small>'+lo.length+' accounts under 50% usage</small>',
+    '<b>'+sg[0][0]+'</b> carries the highest share of its own value at high risk ('+f1(sg[0][1])+'%); <b>'+sg[sg.length-1][0]+'</b> the lowest ('+f1(sg[sg.length-1][1])+'%).<small>Segments need different plays, not one retention campaign</small>',
+    'High-risk share is <b>'+f1(hs(cr))+'%</b> of credit-model accounts and <b>'+f1(hs(sb))+'%</b> of subscription accounts.<small>If these diverge on real data, the product model itself is a churn driver</small>',
+    'Cheque payers are <b>'+f1(pct(pd.length,l.length))+'%</b> of accounts and <b>'+f1(pct(sum(pd,a=>a.oa),sum(l,a=>a.oa)))+'%</b> of the overdue balance.<small>Payment method is a risk signal at signature, before any usage exists</small>'])+'</div>'+
+   '<div class="panel"><h2>Share of each segment\'s contract value at high risk</h2>'+hbar(sg,v=>f1(v)+'%',r=>r[1]>12?'c':r[1]>9?'w':'')+'</div>'})()+
+  '<div class="panel"><h2>Call list: top 25 by score × contract value</h2>'+tbl(['Account','Market','Segment','Model','#Contract value','#Score','Tier','#Usage now','#Change','Trigger','#Renews in','Owner'],hi.slice(0,25).map(a=>[td(a.id),td(MK[a.m].n),td(SG[a.s].n),td(a.model),tn(fm(a.acv)),tn(a.score),td(tp(a.tier)),tn(f0(a.u*100)+'%'),tn('<span class="'+(a.drop>0?'dn':'up')+'">'+(a.drop>0?'−':'+')+f0(Math.abs(a.drop)*100)+' pts</span>'),td(a.sig),tn(a.ren+' mo'),td(a.own.id)]))+
+  '<p class="note"><span'+d(hi,'All high- and medium-risk accounts')+'>Open the full list of '+f0(hi.length)+' accounts</span> and copy as CSV to load the plays into the CRM as tasks.</p></div>'+
+  '<div class="panel"><h2>By segment</h2>'+tbl(['Segment','#Accounts','#Contract value','#Usage','#High-risk accounts','#High-risk value','#Share of segment'],SI.map(s=>{const g=l.filter(a=>a.s===s),h=g.filter(a=>a.tier==='High');return[td(SG[s].n),tn(f0(g.length)),tn(fm(acv(g))),tn(pill(wu(g),70)),tdd(h,SG[s].n+': high risk',h.length),tn(fm(acv(h))),tn(f1(pct(acv(h),acv(g)))+'%')]}))+'</div>'},
+
+o2c(){const l=AC.filter(inM),rc=l.filter(a=>a.recent),st=s=>rc.filter(a=>a.stuck===s),a1=st('Awaiting payment or cheques'),a2=st('Paid, awaiting activation'),a3=st('Active, awaiting invoice');
+  const n=rc.length,step=(lab,cnt,list,days)=>'<div><b'+(list?d(list,lab):'')+'>'+f0(cnt)+'</b><span>'+lab+(days!=null?' · median '+days+' d':'')+'</span></div>';
+  const bk=[['1–30 days',1,30],['31–60 days',31,60],['61–90 days',61,90],['Over 90 days',91,999]],od=l.filter(a=>a.oa>0);
+  const perDay=sum(l,a=>a.acv/365);
+  return'<p class="lede">Service goes live only when payment or cheques are in. Every day between signature and live is a day of revenue that is contracted but not earning, and every stage below has a different owner. This tab measures the chain the way a sales funnel is measured: count, conversion and days at each step.</p>'+
+  '<div class="panel"><h2>Contracts signed in the last 60 days</h2><div class="flow">'+step('Signed',n,rc)+step('Payment or cheques received',n-a1.length,null,med(rc.map(a=>a.d1)))+step('Live on the portal',n-a1.length-a2.length,null,med(rc.map(a=>a.d2)))+step('Invoiced',n-a1.length-a2.length-a3.length,null,med(rc.map(a=>a.d3)))+'</div>'+
+  '<p class="note">Across the whole book, one day of sign-to-live lag is worth AED '+fm(perDay)+' of delayed revenue. Cutting the median by two days recovers about AED '+fm(perDay*2)+' in the year it is done.</p></div>'+
+  (()=>{const P=['Upfront','Post-dated cheques','Card monthly'],q=(p,k)=>{const s=l.filter(a=>a.pay===p).map(a=>a.d1+a.d2).sort((a,b)=>a-b);return s[Math.floor(s.length*k)]||0},ods=SEL.filter(inM).slice().sort((a,b)=>b.od-a.od),tot=sum(od,a=>a.oa),o90=od.filter(a=>a.od>60);
+   return'<div class="cols"><div class="panel"><h2>Days from signature to live, by payment method</h2>'+gbar(['Upfront','Cheques','Card monthly'],P.map(p=>q(p,.5)),P.map(p=>q(p,.9)),['Median','Slowest tenth'],f0,'Days from signature to live by payment method')+'<p class="note">The median hides the problem. The slowest tenth of cheque contracts is where contracted revenue sits idle.</p></div>'+
+   '<div class="panel"><h2>Overdue balance by age</h2>'+hbar(bk.map(b=>[b[0],sum(od.filter(a=>a.od>=b[1]&&a.od<=b[2]),a=>a.oa)]),v=>'AED '+fm(v),r=>r[0]==='Over 90 days'?'c':r[0]==='61–90 days'?'w':'')+'<p class="note">Recovery odds fall with age. Anything past 60 days needs a named decision: payment plan, suspension, or write-off.</p></div></div>'+
+   ins(['Cheque contracts take a median <b>'+q(P[1],.5)+' days</b> to go live against <b>'+q(P[0],.5)+'</b> for upfront payment. Moving a tenth of cheque payers to card or upfront shortens the cycle with no process change.',
+    '<b>'+f1(pct(sum(o90,a=>a.oa),tot))+'%</b> of the overdue balance is older than 60 days ('+o90.length+' accounts).<small>AED '+fm(sum(o90,a=>a.oa))+'</small>',
+    'Five sellers hold <b>'+f1(pct(sum(ods.slice(0,5),s=>s.od),tot))+'%</b> of the overdue balance: '+ods.slice(0,5).map(s=>s.id).join(', ')+'.<small>Collections is concentrated; it is a coaching conversation with five people before it is a policy</small>',
+    '<b>'+f1(pct(rc.filter(a=>a.stuck).length,n))+'%</b> of contracts signed in the last 60 days are waiting at some stage, worth AED '+fm(acv(rc.filter(a=>a.stuck)))+'.'])})()+
+  '<div class="cols"><div class="panel"><h2>Where contracts are waiting</h2>'+tbl(['Stage','Owner','#Contracts','#Contract value','#Average days waiting'],[['Awaiting payment or cheques','Seller',a1],['Paid, awaiting activation','Onboarding',a2],['Active, awaiting invoice','Finance',a3]].map(x=>[td(x[0]),td(x[1]),tdd(x[2],x[0],x[2].length),tn(fm(acv(x[2]))),tn(f1(avg(x[2].map(a=>a.wait))))]))+'</div>'+
+  '<div class="panel"><h2>Days from signature to payment, by payment method</h2>'+tbl(['Method','#Accounts','#Median days','#Slowest tenth','#Bounced cheques','#Overdue accounts'],['Upfront','Post-dated cheques','Card monthly'].map(p=>{const g=l.filter(a=>a.pay===p),s=g.map(a=>a.d1).sort((a,b)=>a-b),b=g.filter(a=>a.bounced),o=g.filter(a=>a.oa>0);
+    return[td(p),tn(f0(g.length)),tn(med(s)),tn(s[Math.floor(s.length*.9)]||0),b.length?tdd(b,p+': bounced cheques',b.length):tn('0'),o.length?tdd(o,p+': overdue',o.length):tn('0')]}))+'</div></div>'+
+  '<div class="panel"><h2>Overdue balances by age</h2>'+tbl(['Age'].concat(ms().map(m=>'#'+MK[m].n),['#Total','#Accounts']),bk.map(b=>{const g=od.filter(a=>a.od>=b[1]&&a.od<=b[2]);return[td(b[0])].concat(ms().map(m=>tn(fm(sum(g.filter(a=>a.m===m),a=>a.oa)))),[tn('<b>'+fm(sum(g,a=>a.oa))+'</b>'),tdd(g,'Overdue '+b[0],g.length)])}))+
+  '<p class="note">Each overdue account lists its seller. Collections is shared: Finance runs the sequence, the seller owns the relationship, and the commission plan decides whether the seller cares.</p></div>'},
+
+desk(){const l=AC.filter(inM),un=l.filter(a=>!a.appr),bands=[['0–5%',0,.05],['5–10%',.05,.1],['10–15%',.1,.15],['15–25%',.15,.25],['Over 25%',.25,1]];
+  const top=[...new Set(un.map(a=>a.own))].map(s=>[s,un.filter(a=>a.own===s)]).sort((a,b)=>sum(b[1],x=>x.list*(x.disc-CAP))-sum(a[1],x=>x.list*(x.disc-CAP))).slice(0,8);
+  return'<p class="lede">Rule in this prototype: a discount above '+CAP*100+'% off list needs a recorded deal-desk approval. The question is whether deep discounts buy anything: larger contracts, longer terms, better usage. Where they do not, they are leakage.</p>'+
+  '<div class="tiles">'+tile('Average discount, weighted',f1(pct(sum(l,a=>a.list-a.acv),sum(l,a=>a.list)))+'%','list AED '+fm(sum(l,a=>a.list)))+tile('Contracts above '+CAP*100+'%',f0(l.filter(a=>a.disc>CAP).length),f1(pct(l.filter(a=>a.disc>CAP).length,l.length))+'% of contracts')+
+   tile('Above '+CAP*100+'% with no approval',f0(un.length),'AED '+fm(sum(un,a=>a.list*(a.disc-CAP)))+' beyond the threshold',un,'Discounts above threshold with no approval')+'</div>'+
+  (()=>{const hiD=l.filter(a=>a.disc>CAP),loD=l.filter(a=>a.disc<=CAP),lk=a=>a.list*(a.disc-CAP),tl=sum(un,lk),dv=un.filter(a=>a.s<2);
+   return'<div class="cols"><div class="panel"><h2>Usage by discount band</h2>'+hbar(bands.map(b=>[b[0],wu(l.filter(a=>a.disc>b[1]&&a.disc<=b[2]||(b[1]===0&&a.disc===0)))||0]),v=>f1(v)+'%')+'<p class="note">Flat bars mean deeper discounts are not producing clients who use more of what they bought.</p></div>'+
+   '<div class="panel"><h2>Unapproved discount value beyond the threshold, by segment</h2>'+hbar(SI.map(s=>[SG[s].n,sum(un.filter(a=>a.s===s),lk)]),v=>'AED '+fm(v))+'</div></div>'+
+   ins(['Clients discounted above '+CAP*100+'% use <b>'+f1(wu(hiD))+'%</b> of what they bought; those at or below use <b>'+f1(wu(loD))+'%</b>. The deeper discount buys no measurable difference in engagement.',
+    'Developers and large brokerages are <b>'+f1(pct(dv.length,un.length))+'%</b> of unapproved contracts but <b>'+f1(pct(sum(dv,lk),tl))+'%</b> of the value.<small>The deal desk should start with the two largest segments, not all contracts</small>',
+    'Eight sellers account for <b>'+f1(pct(sum(top,x=>sum(x[1],lk)),tl))+'%</b> of unapproved discount value.',
+    'Bringing every unapproved discount back to '+CAP*100+'% is worth <b>AED '+fm(tl)+'</b> a year at list, about '+f1(pct(tl,acv(l)))+'% of contract value.'])})()+
+  '<div class="cols"><div class="panel"><h2>Discount bands</h2>'+tbl(['Band','#Contracts','#Contract value','#Usage','#High-risk share','#No approval'],bands.map(b=>{const g=l.filter(a=>a.disc>b[1]&&a.disc<=b[2]||(b[1]===0&&a.disc===0)),u=g.filter(a=>!a.appr);
+    return[td(b[0]),tn(f0(g.length)),tn(fm(acv(g))),tn(f1(wu(g))+'%'),tn(f1(pct(g.filter(a=>a.tier==='High').length,g.length))+'%'),u.length?tdd(u,'No approval, band '+b[0],u.length):tn('0')]}))+
+   '<p class="note">If usage and risk look the same in every band, the discount is not buying a healthier client. That is the finding to take to the CRO before setting next year\'s price rules.</p></div>'+
+  '<div class="panel"><h2>By segment</h2>'+tbl(['Segment','#Average discount','#Above '+CAP*100+'%','#No approval','#Value beyond threshold'],SI.map(s=>{const g=l.filter(a=>a.s===s),u=g.filter(a=>!a.appr);return[td(SG[s].n),tn(f1(pct(sum(g,a=>a.list-a.acv),sum(g,a=>a.list)))+'%'),tn(g.filter(a=>a.disc>CAP).length),u.length?tdd(u,SG[s].n+': no approval',u.length):tn('0'),tn(fm(sum(u,a=>a.list*(a.disc-CAP))))]}))+'</div></div>'+
+  '<div class="panel"><h2>Sellers with the most unapproved discount value</h2>'+tbl(['Seller','Market','#Contracts','#Value beyond threshold','#Deepest discount'],top.map(x=>[td(x[0].id),td(MK[x[0].m].n),tdd(x[1],x[0].id+': unapproved discounts',x[1].length),tn(fm(sum(x[1],a=>a.list*(a.disc-CAP)))),tn(f0(Math.max(...x[1].map(a=>a.disc))*100)+'%')]))+
+  '<p class="note">A working deal desk is a rule set, not a committee: thresholds by discount depth and term, a 24-hour response time, and a logged register of exceptions. This table is that register read backwards.</p></div>'},
+
+targets(){const c=ms().map(m=>({m,...cap(m)})),T=k=>sum(c,x=>x[k]);
+  return'<p class="lede">Next year\'s target is set twice: top-down from the growth the board wants, and bottom-up from what the sales team can carry. The gap between them is shown, not absorbed into quotas. Move the two assumptions and the gap, by market, recalculates.</p>'+
+  '<div class="panel"><div class="ctl"><label for="sg">Top-down growth target on this year\'s bookings <output id="og">+'+S.g+'%</output><input type="range" id="sg" data-k="g" min="0" max="50" step="1" value="'+S.g+'"></label>'+
+   '<label for="sm">Change in market activity (transactions, broker count) <output id="om">'+(S.mk>0?'+':'')+S.mk+'%</output><input type="range" id="sm" data-k="mk" min="-35" max="15" step="1" value="'+S.mk+'"></label></div>'+
+  '<h2>Top-down against bottom-up, next year</h2>'+gbar(c.map(x=>MK[x.m].n),c.map(x=>x.tdn),c.map(x=>x.bu),['Top-down target','Bottom-up capacity'],fm,'Top-down target against bottom-up capacity by market')+tbl(['Market','#Sellers','#Fully ramped now','#Bookings per ramped seller, month','#Top-down target','#Bottom-up capacity','#Gap','#Hires to close the gap'],c.map(x=>[td(MK[x.m].n),tdd(x.l,MK[x.m].n+': sellers',x.l.length),tn(f1(x.fte)),tn(fm(x.prod)),tn(fm(x.tdn)),tn(fm(x.bu)),tn('<span class="'+(x.gap>0?'dn':'up')+'">'+(x.gap>0?'':'+')+fm(-x.gap)+'</span>'),tn(x.hires||'<span class="pill good">Covered</span>')]).concat(c.length>1?[[td('<b>All markets</b>'),tn(T('l')?sum(c,x=>x.l.length):0),tn(f1(T('fte'))),tn(''),tn('<b>'+fm(T('tdn'))+'</b>'),tn('<b>'+fm(T('bu'))+'</b>'),tn('<b class="'+(T('gap')>0?'dn':'up')+'">'+(T('gap')>0?'':'+')+fm(-T('gap'))+'</b>'),tn('<b>'+T('hires')+'</b>')]]:[]))+
+  '<p class="note">Bottom-up capacity = sellers × 85% retained × bookings per ramped seller × 12 × market change. A new hire is counted at 60% of a ramped seller in year one. Productivity is measured from the nine months to date. When the market falls a tenth, hiring alone rarely closes the gap; the rest has to come from price, product mix or retention, and the plan should say which.</p></div>'+
+  (()=>{const pr=c.slice().sort((a,b)=>b.prod/MK[b.m].x-a.prod/MK[a.m].x),g=T('gap'),big=c.slice().sort((a,b)=>b.gap-a.gap)[0],S0=S.mk;S.mk=0;const g0=sum(ms(),m=>cap(m).gap);S.mk=S0;
+   return ins(['At these settings capacity covers <b>'+f1(pct(T('bu'),T('tdn')))+'%</b> of the top-down target. The remaining AED '+fm(Math.max(0,g))+' has no owner until the plan names one.',
+    '<b>'+MK[big.m].n+'</b> carries '+f1(pct(big.gap,g))+'% of the gap.',
+    'The market assumption alone moves the gap by <b>AED '+fm(Math.abs(g-g0))+'</b> (from AED '+fm(g0)+' at a flat market).<small>This is the number to agree with the CRO and Finance before any quota is issued</small>',
+    c.length>1?'Adjusted for price level, bookings per ramped seller are highest in <b>'+MK[pr[0].m].n+'</b> and lowest in <b>'+MK[pr[pr.length-1].m].n+'</b>.<small>The practice gap between them is the enablement agenda</small>':'Select all markets to compare productivity.'])})()+
+  '<div class="panel"><h2>Ramp: sellers by tenure</h2>'+tbl(['Tenure','#Sellers','#Average attainment to date','#Average book'],[['Under 3 months',0,2],['3–5 months',3,5],['6–12 months',6,12],['Over 12 months',13,99]].map(b=>{const g=SEL.filter(s=>inM(s)&&s.ten>=b[1]&&s.ten<=b[2]);return[td(b[0]),g.length?tdd(g,'Sellers, tenure '+b[0],g.length):tn('0'),tn(g.length?f0(avg(g.map(s=>s.att))*100)+'%':'–'),tn(g.length?fm(avg(g.map(s=>s.book))):'–')]}))+
+  '<p class="note">Ramp time is the measure of sales enablement. If the 3–5 month group reaches target attainment a month sooner, capacity rises without a hire.</p></div>'},
+
+comm(){const l=SEL.filter(inM),a=plan(l,{wb:100,acc:2,gate:0}),b=plan(l,S),bk=sum(l,s=>s.bk);
+  const bands=[['Under 50%',0,.5],['50–80%',.5,.8],['80–100%',.8,1],['100–120%',1,1.2],['Over 120%',1.2,9]],mx=Math.max(...bands.map(x=>Math.max(a.r.filter(r=>r.sc>=x[1]&&r.sc<x[2]).length,b.r.filter(r=>r.sc>=x[1]&&r.sc<x[2]).length)),1);
+  const row=(lab,x,y,f,inv)=>[td(lab),tn(f(x)),tn(f(y)),tn(y===x?'–':'<span class="'+((y<x)===!!inv?'up':'dn')+'">'+(y>x?'+':'−')+f(Math.abs(y-x))+'</span>')];
+  return'<p class="lede">A plan that pays only on new bookings rewards the easiest sale and the deepest discount, and is silent on whether the client pays or stays. Test a plan before it is announced: who earns what, what it costs, and what behaviour it pays for.</p>'+
+  '<div class="panel"><div class="ctl"><label for="cw">Weight on new bookings (rest on retention of own book) <output id="ow">'+S.wb+'% / '+(100-S.wb)+'%</output><input type="range" id="cw" data-k="wb" min="40" max="100" step="5" value="'+S.wb+'"></label>'+
+   '<label for="ca">Accelerator above 100% <output id="oa">'+S.acc.toFixed(1)+'×</output><input type="range" id="ca" data-k="acc" min="1" max="3" step=".5" value="'+S.acc+'"></label>'+
+   '<label for="cg">Collections gate: pay 75% if under 92% of billed is collected <output id="ogt">'+(S.gate?'On':'Off')+'</output><input type="range" id="cg" data-k="gate" min="0" max="1" step="1" value="'+S.gate+'"></label></div>'+
+  '<h2>Current plan against your plan</h2>'+tbl(['Measure','#Current: bookings only','#Your plan','#Change'],[row('Total variable pay, AED',a.tot,b.tot,fm,1),row('Cost as share of bookings',pct(a.tot,bk),pct(b.tot,bk),x=>f1(x)+'%',1),row('Sellers at or above 100%',a.over,b.over,f0,0),row('Paid at or above target to sellers with a weak book, AED',a.weakPay,b.weakPay,fm,1)])+
+  '<p class="note">Weak book: under 92% of billed value collected, or expected retention below 95% of target. <span'+d(a.weak,'At or above target on the current plan, with a weak book')+'>Open the '+a.weak.length+' sellers</span> the current plan pays in full despite that.</p></div>'+
+  '<div class="cols"><div class="panel"><h2>Sellers by score band</h2>'+gbar(bands.map(x=>x[0]),bands.map(x=>a.r.filter(r=>r.sc>=x[1]&&r.sc<x[2]).length),bands.map(x=>b.r.filter(r=>r.sc>=x[1]&&r.sc<x[2]).length),['Current plan','Your plan'],f0,'Sellers by score band, current plan against your plan')+'</div>'+
+  '<div class="panel"><h2>Each seller: bookings attainment against retention of own book</h2>'+scat(l.map(s=>({x:s.att*100,y:s.ret*100,r:5,c:s.coll<.92||s.ret<.95?'crit':'s1',t:s.id+' · bookings '+f0(s.att*100)+'%, retention '+f0(s.ret*100)+'%, collected '+f0(s.coll*100)+'%'})),{x0:30,x1:190,y0:80,y1:120,xf:pf,yf:pf,xl:'Bookings attainment',lab:'Bookings attainment against retention by seller',ref:[['x',100],['y',100]]})+lg([['Weak book','crit'],['Healthy book','s1']])+'<p class="note">Bottom-right is the seller a bookings-only plan rewards most: over target on new sales while the book behind them decays.</p></div></div>'+
+  ins(['<b>'+a.weak.length+' sellers</b> are at or above target on the current plan with a weak book, and are paid AED '+fm(a.weakPay)+' between them.',
+   'Your plan costs <b>'+f1(pct(b.tot,bk))+'%</b> of bookings against '+f1(pct(a.tot,bk))+'% today, and puts <b>'+f0(pct(b.over,l.length))+'%</b> of sellers at or above target ('+f0(pct(a.over,l.length))+'% today).',
+   'Bookings and retention attainment are nearly unrelated across sellers. A plan that measures one cannot be assumed to reward the other.'])+
+  '<div class="cols"><div class="panel"><h2>Attainment distribution</h2>'+tbl(['Score','#Current','','#Your plan',''],bands.map(x=>{const ca=a.r.filter(r=>r.sc>=x[1]&&r.sc<x[2]).length,cb=b.r.filter(r=>r.sc>=x[1]&&r.sc<x[2]).length;return[td(x[0]),tn(ca),td('<span class="hb b" style="width:'+Math.round(ca/mx*110)+'px"></span>'),tn(cb),td('<span class="hb" style="width:'+Math.round(cb/mx*110)+'px"></span>')]}))+
+   '<p class="note">A plan where nearly everyone or nearly no one reaches target is broken. Aim for roughly half to two-thirds at or above 100%, and test affordability at 120% with Finance.</p></div>'+
+  '<div class="panel"><h2>Largest changes in payout</h2>'+tbl(['Seller','Market','#Bookings','#Retention','#Collected','#Current','#Your plan'],l.map((s,i)=>({s,x:a.r[i].pay,y:b.r[i].pay})).sort((p,q)=>Math.abs(q.y-q.x)-Math.abs(p.y-p.x)).slice(0,8).map(r=>[td('<span'+d(r.s.acc,r.s.id+': accounts')+'>'+r.s.id+'</span>'),td(MK[r.s.m].n),tn(f0(r.s.att*100)+'%'),tn(f0(r.s.ret*100)+'%'),tn(f0(r.s.coll*100)+'%'),tn(fm(r.x)),tn('<span class="'+(r.y>=r.x?'up':'dn')+'">'+fm(r.y)+'</span>')]))+
+   '<p class="note">Every payout traces to named accounts. A seller who disputes a figure opens their own list; the dispute becomes arithmetic.</p></div></div>'},
+
+dict(){return'<p class="lede">One definition, one owner and one source per measure, agreed with Finance and the country managers before any dashboard is built. These are the definitions this prototype uses; the real ones are a negotiation.</p>'+
+  '<div class="panel"><h2>Measures</h2>'+tbl(['Measure','Definition','Source system'],[['Contract value','Annual value of the contract in force, after discount','CRM, order'],['Usage','Credits consumed or listing slots filled ÷ credits or slots bought, averaged over the last two months','Platform'],['Usage change','Average of months 1–3 minus average of months 5–6, in points','Platform'],['Leads change','Change in leads delivered over three months','Platform'],['Overdue balance','Billed and unpaid past its due date, with age in days','Billing and cheque ledger'],['Days to live','Signature to payment or cheques received, plus payment to activation','CRM and billing'],['Discount','1 − contract value ÷ list value','CRM, quote'],['Unapproved discount','Discount above '+CAP*100+'% with no approval record','Deal desk register'],['Expected retention','Contract value × renewal probability for its risk tier, ÷ contract value','Derived'],['Seller score','Weight × bookings attainment + (1 − weight) × retention attainment','Commission plan'],['Stage conversion','Deals that passed the stage ÷ deals that passed or were lost at it. Open deals excluded','CRM'],['Deal cycle','Days from lead created to won','CRM'],['Stalled deal','Open in a stage for more than twice the usual time for that stage and segment','CRM']].map(r=>r.map(td)))+'</div>'+
+  '<div class="panel"><h2>Risk score, 0–100</h2>'+tbl(['Signal','#Max points','Scoring'],[['Usage falling','35','Full points at a 25-point fall'],['Low usage','25','From 60% usage down to 20%'],['Bounced cheque','15','Any bounce in the term'],['Overdue balance','10','10 if over 30 days, 4 if under'],['Leads falling','15','Full points at a 30% fall']].map(r=>[td(r[0]),tn(r[1]),td(r[2])]))+
+  '<p class="note">High: 55 and above. Medium: 30–54. The weights here are a starting judgement. In production they are fitted to actual renewal outcomes and re-checked each quarter, and the score is kept only if it predicts better than usage alone.</p></div>'+
+  '<div class="panel"><h2>What a production version adds</h2><ul class="act"><li>A canonical account and contract ID joining CRM, billing and platform data<small>Without it every number above is contestable</small></li><li>Fitted renewal probabilities and a back-tested forecast by market<small>Replaces the three assumed tier rates</small></li><li>Deferred revenue, credit breakage and recognition timing<small>Owned with Finance; left out here on purpose</small></li><li>AI-drafted weekly commentary and account briefs, with human approval and a written rule on what data the model may see<small>Governance published before the tool</small></li></ul></div>'}
+};
+
+function checks(){const l=AC.filter(inM),s=SEL.filter(inM),p=plan(s,{wb:100,acc:2,gate:0});
+  return[['Risk tiers add up to all accounts',['High','Medium','Low'].reduce((n,t)=>n+l.filter(a=>a.tier===t).length,0)===l.length],
+  ['Segments add up to total contract value',SI.reduce((n,i)=>n+acv(l.filter(a=>a.s===i)),0)===acv(l)],
+  ['Seller books add up to total contract value',sum(s,x=>x.book)===acv(l)],
+  ['Overdue by age adds up to overdue total',sum(l.filter(a=>a.od>=1),a=>a.oa)===sum(l,a=>a.oa)],
+  ['Every unapproved discount is above the threshold',l.filter(a=>!a.appr).every(a=>a.disc>CAP)],
+  ['Stuck contracts are a subset of recent contracts',l.filter(a=>a.stuck).every(a=>a.recent)],
+  ['Funnel outcomes add up to all leads',(g=>g.filter(o=>o.res==='Won').length+g.filter(o=>o.res==='Lost').length+g.filter(o=>o.res==='Open').length===g.length)(OP.filter(inM))],
+  ['Payouts by seller add up to plan cost',Math.abs(sum(p.r,x=>x.pay)-p.tot)<1]]}
+
+/* ---------- 5. Shell ---------- */
+const TABS=[['overview','Overview'],['funnel','Funnel & velocity'],['warning','Early warning'],['o2c','Order to cash'],['desk','Deal desk'],['targets','Targets & capacity'],['comm','Commissions'],['dict','Definitions']];
+let tab=TABS.some(t=>'#'+t[0]===location.hash)?location.hash.slice(1):'overview';
+function render(){D=[];$('tabs').innerHTML=TABS.map(t=>'<button role="tab" aria-selected="'+(t[0]===tab)+'" data-t="'+t[0]+'">'+t[1]+'</button>').join('');$('main').innerHTML=V[tab]();const ck=checks();$('chk').textContent='Figures check '+ck.filter(x=>x[1]).length+'/'+ck.length;$('chk').title=ck.map(x=>(x[1]?'OK  ':'FAIL  ')+x[0]).join('\n')}
+$('fm').innerHTML=[[-1,'All markets']].concat(MK.map((c,i)=>[i,c.n])).map(x=>'<option value="'+x[0]+'">'+x[1]+'</option>').join('');
+$('fm').addEventListener('change',e=>{F.m=+e.target.value;render()});
+$('tabs').addEventListener('click',e=>{const t=e.target.dataset.t;if(t){tab=t;try{history.replaceState(null,'','#'+t)}catch(_){}render();window.scrollTo(0,0)}});
+document.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.k;if(k){S[k]=+e.target.value;const id=e.target.id;render();const el=$(id);if(el)el.focus()}});
+const HD={a:['Account','Market','Segment','Model','Payment','Contract value','List value','Discount %','Approved','Usage %','Usage change, pts','Leads change %','Bounced cheques','Overdue, AED','Days overdue','Risk score','Tier','Trigger','Play','Renews in, months','Owner','Waiting at'],o:['Deal','Market','Segment','Source','Stage','Status','Value, AED','Days in current stage','Days since created or to close','Stalled','Owner'],s:['Seller','Market','Tenure, months','Accounts','Book, AED','Quota, AED','Bookings attainment %','Retention attainment %','Collected %','Overdue on book, AED']};
+const rowOf=x=>x.k==='a'?[x.id,MK[x.m].n,SG[x.s].n,x.model,x.pay,x.acv,x.list,(x.disc*100).toFixed(1),x.appr?'Yes':'No',(x.u*100).toFixed(0),(-x.drop*100).toFixed(0),(x.leads*100).toFixed(0),x.bounced,x.oa,x.od,x.score,x.tier,x.sig,PLAY[x.sig],x.ren,x.own.id,x.stuck]:x.k==='o'?[x.id,MK[x.m].n,SG[x.s].n,SRC[x.src],STG[x.st],x.res,x.val,(x.dd[x.dd.length-1]||0).toFixed(0),sum(x.dd,v=>v).toFixed(0),x.stall?'Yes':'No',x.own.id]:[x.id,MK[x.m].n,x.ten,x.acc.length,x.book,x.quota,(x.att*100).toFixed(0),(x.ret*100).toFixed(0),(x.coll*100).toFixed(0),x.od];
+let cur=[];
+function open(i){const x=D[i];cur=x[1];$('dt').textContent=x[0]+' · '+cur.length.toLocaleString('en-US')+' record'+(cur.length===1?'':'s');const H=cur.length?HD[cur[0].k]:[];
+  $('dbody').innerHTML=(cur.length>150?'<p class="note">Showing the first 150. Copy as CSV takes all '+cur.length.toLocaleString('en-US')+'.</p>':'')+(cur.length?'<table><tr>'+H.map(h=>'<th>'+h+'</th>').join('')+'</tr>'+cur.slice(0,150).map(w=>'<tr>'+rowOf(w).map(v=>'<td>'+v+'</td>').join('')+'</tr>').join('')+'</table>':'<p class="note">No records.</p>');
+  const g=$('dlg');g.showModal?g.showModal():g.setAttribute('open','')}
+document.addEventListener('click',e=>{const el=e.target.closest('[data-d]');if(el)open(+el.dataset.d)});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('td[data-d],b[data-d],span[data-d]')){e.preventDefault();open(+e.target.dataset.d)}});
+function copy(text,btn,host){const done=()=>{const o=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=o,1500)};
+  const fb=()=>{const t=document.createElement('textarea');t.value=text;host.prepend(t);t.select();btn.textContent='Select all and copy'};
+  try{navigator.clipboard.writeText(text).then(done,fb)}catch(_){fb()}}
+$('cp').addEventListener('click',e=>copy([cur.length?HD[cur[0].k]:[]].concat(cur.map(rowOf)).map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'),e.target,$('dbody')));
+$('cl').addEventListener('click',()=>$('dlg').close());
+render();
+</script>
+</body></html>
